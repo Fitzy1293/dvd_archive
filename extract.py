@@ -38,12 +38,14 @@ def countFolders(archiveDir):
     return appropriateDir
 
 def archiveMovie(archiveDir):
+    firstErrorFlag = True
+    completed = False
+
     print('- Currently in archive HDD - ')
     os.system('ls ' + '\\ '.join( str(archiveDir).split(' '))) #What's in destination HDD.
 
     newVideosDir = countFolders(archiveDir)
     fullpathVideosDir = os.path.join(archiveDir, newVideosDir)
-
     if not os.path.exists(fullpathVideosDir):
         os.makedirs(fullpathVideosDir)
 
@@ -54,56 +56,67 @@ def archiveMovie(archiveDir):
 
     vidDir = '/media/fit/DVD Video Recording/VIDEO_TS' #Relevant files start with VTS, end in .VOB.
 
-    if os.path.exists(vidDir):
+    while not completed:
+        if os.path.exists(vidDir):
 
-        totalVidSizes = 0
-        fileSizes = []
-        pathsOnDVD = []
-        for file in [i for i in os.listdir(vidDir)]:
-            if file.startswith('VTS') and file.endswith('.VOB'):
-                fullpath = os.path.join(vidDir, file)
-                vidSize = os.path.getsize(fullpath)
-                totalVidSizes = totalVidSizes + vidSize
+            totalVidSizes = 0
+            fileSizes = []
+            pathsOnDVD = []
+            for file in [i for i in os.listdir(vidDir)]:
+                if file.startswith('VTS') and file.endswith('.VOB'):
+                    fullpath = os.path.join(vidDir, file)
+                    vidSize = os.path.getsize(fullpath)
+                    totalVidSizes = totalVidSizes + vidSize
 
-                ogPath = os.path.join(vidDir, file)
-                commandPath = '\\ '.join( str(ogPath).split(' '))
-                pathsOnDVD.append(commandPath)
+                    ogPath = os.path.join(vidDir, file)
+                    commandPath = '\\ '.join( str(ogPath).split(' '))
+                    pathsOnDVD.append(commandPath)
 
-                fileSizes.append('\t' + f'{file}: {format_size(vidSize)}')
+                    fileSizes.append('\t' + f'{file}: {format_size(vidSize)}')
 
 
-        print()
-        print(f'Total size to copy: {format_size(totalVidSizes)}' )
-        print(*fileSizes, sep='\n')
+            print()
+            print(f'Total size to copy: {format_size(totalVidSizes)}' )
+            print(*fileSizes, sep='\n')
 
-        print()
-        print('Copying video files from DVD, this may take some time.')
+            print()
+            print('Copying video files from DVD, this may take some time.')
 
-        start = time.time()
+            start = time.time()
 
-        destinationCommandPath = '\\ '.join( str(fullpathVideosDir).split(' '))
-        copyCommand = 'cp ' + ' '.join(pathsOnDVD) +  ' ' + destinationCommandPath
-        print()
-        print('Executing bash command below.')
-        print(copyCommand)
+            destinationCommandPath = '\\ '.join( str(fullpathVideosDir).split(' '))
+            copyCommand = 'cp ' + ' '.join(pathsOnDVD) +  ' ' + destinationCommandPath
+            print()
+            print('Executing bash command below.')
+            print(copyCommand)
 
-        os.system(copyCommand) #Does the actual copying from DVD to external HDD.
+            os.system(copyCommand) #Does the actual copying from DVD to external HDD.
 
-        copyTime =  elapsedTime(round(time.time() - start))
-        print()
-        print(f'Elapsed time: {copyTime}')
+            copyTime =  elapsedTime(round(time.time() - start))
+            print()
+            print(f'Elapsed time: {copyTime}')
 
-        eject = 'eject /media/fit/DVD\ Video\ Recording'
-        os.system(eject)
-        print()
-        print('Successfully completed')
+            eject = 'eject /media/fit/DVD\ Video\ Recording'
+            os.system(eject)
+            print()
+            print('Successfully completed')
 
-    else:
-        print('Could not find media. Check if there is a DVD in player.')
+            completed = True
+
+
+        else:
+            if firstErrorFlag:
+                print()
+                print('Could not find media. Check if there is a DVD in player.')
+                firstErrorFlag = False
+            else:
+                pass
+
 
 if __name__ == '__main__':
     print('Written using Ubuntu 18.04 and Python 3.6')
     print()
-    
+
     archiveDir = '/media/fit/Home Movies'
+
     archiveMovie(archiveDir)
