@@ -5,7 +5,7 @@ import time
 import subprocess
 from humanfriendly import format_size
 
-def elapsedTime(elapsedSeconds):
+def elapsedTime(elapsedSeconds): #I dunno why I made this.
     elapsedMinutes = elapsedSeconds // 60
 
     leftOverSeconds = elapsedSeconds - (60 * elapsedMinutes)
@@ -17,7 +17,7 @@ def elapsedTime(elapsedSeconds):
     return(str(elapsedMinutes) + ':' + secondsString + ' (minutes:seconds)')
 
 
-def countFolders(archiveDir):
+def countFolders(archiveDir): #Returns the correct folder in archiveDir.
     ct = 0
     for file in os.listdir(archiveDir):
         fullpath = os.path.join(archiveDir, file)
@@ -57,12 +57,17 @@ def archiveMovie(archiveDir):
     vidDir = '/media/fit/DVD Video Recording/VIDEO_TS' #Relevant files start with VTS, end in .VOB.
 
     while not completed:
+
         if os.path.exists(vidDir):
+            if not firstErrorFlag:
+                print('DVD found - continuing program.')
 
             totalVidSizes = 0
+            files = []
             fileSizes = []
             pathsOnDVD = []
             for file in [i for i in os.listdir(vidDir)]:
+
                 if file.startswith('VTS') and file.endswith('.VOB'):
                     fullpath = os.path.join(vidDir, file)
                     vidSize = os.path.getsize(fullpath)
@@ -72,34 +77,40 @@ def archiveMovie(archiveDir):
                     commandPath = '\\ '.join( str(ogPath).split(' '))
                     pathsOnDVD.append(commandPath)
 
+                    files.append(file)
                     fileSizes.append('\t' + f'{file}: {format_size(vidSize)}')
-
 
             print()
             print(f'Total size to copy: {format_size(totalVidSizes)}' )
             print(*fileSizes, sep='\n')
 
             print()
-            print('Copying video files from DVD, this may take some time.')
+            print('Copying video files from DVD with, this may take some time.')
 
             start = time.time()
-
             destinationCommandPath = '\\ '.join( str(fullpathVideosDir).split(' '))
-            copyCommand = 'cp ' + ' '.join(pathsOnDVD) +  ' ' + destinationCommandPath
+            copyCommand = 'cp -v ' + ' '.join(pathsOnDVD) +  ' ' + destinationCommandPath
             print()
-            print('Executing bash command below.')
             print(copyCommand)
+            print()
 
             os.system(copyCommand) #Does the actual copying from DVD to external HDD.
 
-            copyTime =  elapsedTime(round(time.time() - start))
+            totalTime = round(time.time() - start)
+            copyTime =  elapsedTime(totalTime)
             print()
-            print(f'Elapsed time: {copyTime}')
+            print(f'Copy time: {copyTime}')
 
             eject = 'eject /media/fit/DVD\ Video\ Recording'
             os.system(eject)
+
+            MiBps = round( (totalVidSizes / 10**6) / totalTime, 2)
+
             print()
-            print('Successfully completed')
+            print(f'Copying at: {MiBps} MiB/s')
+
+            print()
+            print('Successfully completed.')
 
             completed = True
 
@@ -107,14 +118,16 @@ def archiveMovie(archiveDir):
         else:
             if firstErrorFlag:
                 print()
-                print('Could not find media. Check if there is a DVD in player.')
+                print('Could not find media. Check if there is a DVD in the player.')
+                print()
+                print('Program will wait until a DVD is inserted.')
                 firstErrorFlag = False
             else:
                 pass
 
 
 if __name__ == '__main__':
-    print('Written using Ubuntu 18.04 and Python 3.6')
+    print('Written on Ubuntu 18.04 with Python 3.6')
     print()
 
     archiveDir = '/media/fit/Home Movies'
